@@ -1,0 +1,7 @@
+LANGUAGE: ZH
+ICON: ./resources/res_wave.jpg
+START_ICON: ./resources/Start.ico
+STOP_ICON: ./resources/Stop.ico
+START_COL_ICON: ./resources/start_col.jpg
+STOP_COL_ICON: ./resources/stop_col.jpg
+APP_NAME: Aircas_Secure
