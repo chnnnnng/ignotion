@@ -55,7 +55,6 @@ private:
             std::pair<string,function<string()>>("{{ __NAVIGATION__ }}",[this](){ //
         QString n;
         IgnotionDir(QDir("")).traverse([&](IgnotionDir * igdir,int depth){
-            if(igdir->isRoot)return;
             QDir dir = igdir->dir;
             QList<QFileInfo> list = FileManager::ls(dir,QDir::Time);
             if(list.empty()){
@@ -84,7 +83,7 @@ private:
     QString filename;
     QString filenameNoPath;
     QDateTime time;
-    QString markdown;
+
     QString content;
     IgnotionDir * dir;
     QString renderTemplate(const QString & temp);
@@ -92,6 +91,8 @@ private:
     QString outputDir; //输出文件路径，用于文件检索，如 HTML/articles/aaa
     QString outputRoutePath; //输出文件陆游路径，如 articles/aaa/hello.html
     QString rootReletiveToOutputDir;
+public:
+    QString markdown;
 public:
     Page(QString filename, IgnotionDir * dir);
     QString translate(bool fource = false);

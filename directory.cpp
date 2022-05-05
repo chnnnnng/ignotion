@@ -4,9 +4,14 @@
 IgnotionDir::IgnotionDir(QDir dir){
     this->dir = dir;
     if(dir.exists("config.yaml")){//如果是工作空间根目录
-        this->displayName = "";
         this->routeName = "";
         this->isRoot = true;
+        try{
+            YAML::Node ignotion_dir_yaml = YAML::LoadFile(this->dir.filePath(".ignotion_dir").toStdString());
+            this->displayName = QString(ignotion_dir_yaml["DIR_DISPLAY_NAME"].as<std::string>().c_str());
+        }catch(YAML::BadFile &e){
+            this->displayName = "/";
+        }
     }else{
         try{
             YAML::Node ignotion_dir_yaml = YAML::LoadFile(this->dir.filePath(".ignotion_dir").toStdString());

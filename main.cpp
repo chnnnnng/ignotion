@@ -11,6 +11,8 @@
 #include "page.h"
 #include "directory.h"
 
+//#include "MdParser.hpp"
+
 using namespace std;
 
 int main(int argc, char *argv[])
@@ -29,6 +31,16 @@ int main(int argc, char *argv[])
         cout << "# 输入指令 --make-dir 将当前目录作为Ignotion工作子目录" << endl;
         //return 0;
     }
+
+
+//    IgnotionDir rootIgnotionDir(QDir(""));
+//    Page page(QString("test.md"),&rootIgnotionDir);
+//    MdParser mp(page.markdown);
+//    mp.show();
+//    QString outputFile = mp.html();
+//    FileManager::write("test.html",outputFile);
+//    return 0;
+
 
     QCoreApplication::setApplicationVersion("1.0");
     QCommandLineParser parser;
@@ -197,7 +209,16 @@ int main(int argc, char *argv[])
         if(routename==""){
             routename = QDir::current().dirName().toStdString();
         }
-        QString filecontent = QString("DIR_DISPLAY_NAME: %1\nDIR_ROUTE_NAME: %2").arg(QString(displayname.c_str())).arg(QString(routename.c_str()));
+        QString filecontent = QString("# Ignotion 工作目录\
+\n# Ignotion的文章存放在目录中，工作空间是根目录。 通过合理安排目录，你可以让你的文章井然有序！\
+\n\n# 一个目录具有三个名字，分别为：\
+\n#   - Directory name，即文件夹真实的名字\
+\n#   - Display name, 即在文章或导航栏中显示的名字\
+\n#   - Route name，即在URL中路由时使用的名字\
+\n\n# 对于根目录，仅Display name有效\
+\n# 若根目录的 .ignotion_dir文件缺省，将使用 \"/\" 作为Display name\
+\n\n# 以下为.ignotion_dir内容\
+\n\nDIR_DISPLAY_NAME: %1\n\nDIR_ROUTE_NAME: %2").arg(QString(displayname.c_str())).arg(QString(routename.c_str()));
         FileManager::write(".ignotion_dir",filecontent);
         cout << "Current directory "+QDir("").dirName().toStdString()+" is now an Ignotion Dir\nuse <-n> to create a new page.";
         return 0;

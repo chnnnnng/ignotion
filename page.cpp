@@ -1,5 +1,5 @@
 #include "page.h"
-#include "MdParseHTML.hpp"
+#include "MdParser.hpp"
 
 
 Page::Page(QString filename, IgnotionDir * dir)
@@ -17,6 +17,8 @@ Page::Page(QString filename, IgnotionDir * dir)
         p = p->up;
     }
     outputRoutePath = outputDir + "/"+filenameNoPath + ".html";
+    if(outputRoutePath.startsWith("/")) outputRoutePath = outputRoutePath.mid(1);
+
     outputDir.prepend(QString(Config::getInstance().outputDir.c_str()));
 }
 
@@ -33,7 +35,7 @@ QString Page::translate(bool force){
 
 QString & Page::parseContent(){
     MdParser mdparser(markdown.toStdString());
-    content = QString(mdparser.html().c_str());
+    content = mdparser.html();
     return content;
 }
 

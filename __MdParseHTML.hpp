@@ -1,5 +1,5 @@
-#ifndef MDPARSEHTML_HPP
-#define MDPARSEHTML_HPP
+#ifndef __MDPARSEHTML_H
+#define __MDPARSEHTML_H
 #include <string>
 #include <vector>
 #include <iostream>
@@ -467,4 +467,4 @@ public:
 
 
 
-#endif // MDPARSEHTML_HPP
+#endif // __MDPARSEHTML_H
