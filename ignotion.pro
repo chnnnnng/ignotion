@@ -21,7 +21,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
-    MdParser.h \
+    MdParser.hpp \
     __MdParseHTML.hpp \
     config.h \
     directory.h \

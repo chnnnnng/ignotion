@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
     *   ignotion [ -n | --new ] <name>     使用默认模版新建name文件
     *   ignotion [ -n | --new] <name> --template <template_name>    使用template_name模版创建name文件
     *   注：
-    *   模板文件存放于主题文件夹下，默认模板文件为default.md
+    *   模板文件存放于主题文件夹下，默认模板文件为page.md
     *   参数中的name和template_name均不需要写.md后缀
     */
     if(ignotionWorkspace && parser.isSet("new")){
@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
             cout << filename.toStdString() + ".md already exists, failed to create."<<endl<<endl;
             return 0;
         }
-        QString templateFilename = "default";
+        QString templateFilename = "page";
         if(parser.isSet("template")){
             templateFilename = parser.value("template");
         }

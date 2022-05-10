@@ -1,5 +1,5 @@
-#ifndef MDPARSE_HPP
-#define MDPARSE_HPP
+#ifndef MDPARSER_H
+#define MDPARSER_H
 #include <string>
 #include <QString>
 #include <QStringList>
@@ -32,91 +32,44 @@ enum TAG_TPYE{
     code            = 19,
     root            = 20
 };
-// HTML 前置标签
-const QString frontTag[] = {
-    "","<p>","","<ul>","<ol>","<li>","<em>","<strong>",
-    "<hr color=#CCCCCC size=1 />","<br />",
-    "","<blockquote>",
-    "<h1","<h2","<h3","<h4","<h5","<h6", // 右边的尖括号预留给添加其他的标签属性
-    "<pre><code>","<code>",""
-};
-// HTML 后置标签
-const QString backTag[] = {
-    "","</p>","","</ul>","</ol>","</li>","</em>","</strong>",
-    "","","","</blockquote>",
-    "</h1>","</h2>","</h3>","</h4>","</h5>","</h6>",
-    "</code></pre>","</code>",""
-};
+
 
 
 class AbsParser;
+
 class MdNode{
 public:
     QString md;
     TAG_TPYE type;
     QString html;
-    vector<MdNode> children;
+    std::vector<MdNode> children;
     QString appendix;
 private:
-    shared_ptr<AbsParser> parser;
+    std::shared_ptr<AbsParser> parser;
 public:
-    MdNode(){
-        md = "";
-        type = nul;
-        html = "";
-        appendix = "";
-    }
-    MdNode(const QString & md){
-        this->md = md;
-        parseNode();
-    }
-    MdNode(const QString & md, TAG_TPYE type){
-        this->md = md;
-        this->type = type;
-        parseNode();
-    }
-
+    MdNode();
+    MdNode(const QString & md);
+    MdNode(const QString & md, TAG_TPYE type);
     void parseNode(bool force = false);
-    void show(){
-        qDebug() << frontTag[type];
-        if(!md.isEmpty())qDebug() << md;
-        for(auto& ch : children) ch.show();
-        qDebug() << backTag[type];
-    }
+    void show();
+    QString getPlainText();
+    QString getHTML();
+};
 
-    QString getPlainText(){
-        if(children.empty()) return md;
-        QString text;
-        for(auto ch : children){
-            text += ch.getPlainText();
-        }
-        return text;
-    }
-
-    QString getHTML(){
-        if(children.empty() && type != hr) return html;
-        if(type == href){
-            return "<a href=\"" + appendix + "\">" + md +"</a>";
-        }
-        if(type == image){
-            return "<img src=\"" + appendix + "\" alt=\""+md+"\" title=\""+md+"\" />";
-        }
-        if(type == blockcode){
-            return frontTag[type] + md + backTag[type];
-        }
-        QString html;
-        html += frontTag[type];
-        if(type >= h1 && type <= h6){
-            html += " id=\"";
-            html += getPlainText();
-            html += "\">";
-        }
-        for(auto ch : children){
-            html += ch.getHTML();
-        }
-        html += backTag[type];
-        return html;
-    }
+class MdParser{
+private:
+    QString md;
+    QString frontmatter;
+    std::unique_ptr<MdNode> node;
+public:
+    MdParser(const QString & md);
+    MdParser(const std::string & md);
+    MdParser * parse();
+    void parseFrontMatter();
+    void show();
+    QString html();
+    QString frontMatter();
+    QString chapter();
 };
 
 class AbsParser{
@@ -472,17 +425,23 @@ public:
         else return false;
     }
     bool push_line(const QString & line){
-        if(line=="" || trimTabBegin(line).left(2) != "- "){
-            //qDebug() << "ul parse ready";
+        //QString line{lines};
+        //qDebug();
+        if(line.isEmpty() || trimTabBegin(line).left(2) != "- "){
+            //qDebug();//?????????????????????????????????????????????????????????????
+            //cout<<"1";
             this->ready = true;
             return true;
         }
-        int thisLevel = getLiLevel(line);
-        if(thisLevel != level){
+        if(getLiLevel(line) != level){
+            //cout<<"!="<<line.toStdString()<<endl;
             rootlist.children.back().appendix.append(line.mid(1)+"\n");
         }else{
-            rootlist.children.push_back(MdNode(trimTabBegin(line).mid(2),li));
+            //line.toStdString();
+            QString subname = trimTabBegin(line).mid(2);
+            rootlist.children.push_back(MdNode(subname,li));
         }
+        //cout<<"over\n";
         this->ready = false;
         return false;
     }
@@ -520,12 +479,13 @@ public:
     }
     bool push_line(const QString & line){
         if(line=="" || !capable(line,nul)){
-            //qDebug() << "ol parse ready";
+            qDebug();
             this->ready = true;
             return true;
         }
-        int thisLevel = getLiLevel(line);
-        if(thisLevel != level){
+        //int thisLevel = ;
+        qDebug();
+        if(getLiLevel(line) != level){
             rootlist.children.at(rootlist.children.size()==0?0:rootlist.children.size()-1).appendix.append(line.mid(1)+"\n");
         }else{
             rootlist.children.push_back(MdNode(trimTabBegin(line).mid(3),li));
@@ -673,117 +633,11 @@ public:
         this->ready = true;
         return true;
     }
-    void parse(MdNode* node){
+    void parse(MdNode * node){
         MdNode temp(md,nul);
         temp.html = temp.md;
         node->children.push_back(temp);
     }
 };
 
-void MdNode::parseNode(bool force){
-    if(type == nul && !force) return;
-    children.clear();
-    QStringList list = this->md.split("\n");
-    if(!list.back().isEmpty())list.append("");
-    for(auto& line : list){
-        //qDebug() <<"read line: "<< line;
-        if(parser == nullptr){
-            if(line == "") continue;
-            if(LineParser::capable(line,type)){
-                parser.reset(new LineParser);
-            }
-            else if(H1Parser::capable(line,type)){
-                parser.reset(new H1Parser());
-            }
-            else if(H2Parser::capable(line,type)){
-                parser.reset(new H2Parser());
-            }
-            else if(H3Parser::capable(line,type)){
-                parser.reset(new H3Parser());
-            }
-            else if(H4Parser::capable(line,type)){
-                parser.reset(new H4Parser());
-            }
-            else if(H5Parser::capable(line,type)){
-                parser.reset(new H5Parser());
-            }
-            else if(H6Parser::capable(line,type)){
-                parser.reset(new H6Parser());
-            }
-            else if(StrongParser::capable(line,type)){
-                parser.reset(new StrongParser());
-            }
-            else if(ItalicParser::capable(line,type)){
-                parser.reset(new ItalicParser());
-            }
-            else if(InlineCodeParser::capable(line,type)){
-                parser.reset(new InlineCodeParser());
-            }
-            else if(QuoteParser::capable(line,type)){
-                parser.reset(new QuoteParser());
-            }
-            else if(BlockCodeParser::capable(line,type)){
-                parser.reset(new BlockCodeParser());
-            }
-            else if(UnorderedListParser::capable(line,type)){
-                parser.reset(new UnorderedListParser(line));
-            }
-            else if(OrderedListParser::capable(line,type)){
-                parser.reset(new OrderedListParser(line));
-            }
-            else if(ImageParser::capable(line,type)){
-                parser.reset(new ImageParser());
-            }
-            else if(LinkParser::capable(line,type)){
-                parser.reset(new LinkParser());
-            }
-            else if(ParagraphParser::capable(line,type)){
-                parser.reset(new ParagraphParser());
-            }
-            else{
-                parser.reset(new PlainTextParser());
-            }
-        }
-        if(parser != nullptr && parser->ready == false){
-            parser->push_line(line);
-        }
-        if(parser->ready){
-            parser->parse(this);
-            parser = nullptr;
-        }
-    }
-}
-
-class MdParser{
-private:
-    QString md;
-    unique_ptr<MdNode> node;
-private:
-    void parse(){
-        //qDebug() << "MdParser parser begin";
-        node.reset(new MdNode(md,root));
-    }
-public:
-    MdParser(const QString & md){
-        this->md = md;
-        parse();
-    }
-    MdParser(const string & md){
-        this->md = md.c_str();
-        parse();
-    }
-    void show(){
-        //qDebug() << "MdParser show";
-        node->show();
-        //qDebug() << "MdParser show over";
-    }
-    QString html(){
-        return node->getHTML();
-    }
-};
-
-
-
-
-
-#endif // MDPARSE_HPP
+#endif // MDPARSER_H

@@ -12,7 +12,7 @@
 #include "yaml-cpp/eventhandler.h"
 #include "yaml-cpp/yaml.h"
 #include "directory.h"
-#include "MdParser.h"
+#include "MdParser.hpp"
 
 using namespace std;
 

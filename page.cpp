@@ -12,6 +12,7 @@ Page::Page(QString filename, IgnotionDir * dir)
     YAML::Node node = YAML::Load(frontmatter.toStdString());
     if (node["title"]) {
       this->title = QString(node["title"].as<std::string>().c_str());
+      if(this->title == "null") this->title = this->filenameNoPath;
     }
     if (node["template"]) {
       this->templateName = QString(node["template"].as<std::string>().c_str());

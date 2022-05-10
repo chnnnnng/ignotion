@@ -1,4 +1,20 @@
-#include "MdParser.h"
+#include "MdParser.hpp"
+
+// HTML 前置标签
+const QString frontTag[] = {
+    "","<p>","","<ul>","<ol>","<li>","<em>","<strong>",
+    "<hr />","<br />",
+    "","<blockquote>",
+    "<h1","<h2","<h3","<h4","<h5","<h6", // 右边的尖括号预留给添加其他的标签属性
+    "<pre><code>","<code>",""
+};
+// HTML 后置标签
+const QString backTag[] = {
+    "","</p>","","</ul>","</ol>","</li>","</em>","</strong>",
+    "","","","</blockquote>",
+    "</h1>","</h2>","</h3>","</h4>","</h5>","</h6>",
+    "</code></pre>","</code>",""
+};
 
 MdNode::MdNode(){
     md = "";
@@ -180,3 +196,4 @@ QString MdParser::chapter(){
     }
     return chapter;
 }
+
