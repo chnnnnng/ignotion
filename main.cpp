@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
                 }else{
                     cout << "[ ]\t";
                 }
-                cout << list.at(i).lastModified().toString("yyMMdd hh:mm").toStdString() <<" |\t"<<list.at(i).fileName().toStdString() << endl;
+                cout << p.getTime().toString("yyMMdd hh:mm").toStdString() <<" |\t"<<p.getTimeWithFilename().toStdString() << endl;
             }
         });
         cout << "\t====================================================================================\n"<<endl;

@@ -12,6 +12,7 @@
 #include "yaml-cpp/eventhandler.h"
 #include "yaml-cpp/yaml.h"
 #include "directory.h"
+#include "MdParser.h"
 
 using namespace std;
 
@@ -54,12 +55,14 @@ private:
     }),
             std::pair<string,function<string()>>("{{ __NAVIGATION__ }}",[this](){ //
         QString n;
+        n.append("<div id=\"ignotion_navigation\">");
         IgnotionDir(QDir("")).traverse([&](IgnotionDir * igdir,int depth){
             QDir dir = igdir->dir;
             QList<QFileInfo> list = FileManager::ls(dir,QDir::Time);
             if(list.empty()){
                 return;
             }
+            n.append("<div class=\"ignotion_navigation_sub\">");
             n.append("<h3>");
             QString tab;
             for(int i=0;i<depth-1;i++) tab.append("&emsp;");
@@ -72,33 +75,42 @@ private:
                 n.append("./"+this->rootReletiveToOutputDir+p.outputRoutePath);
                 n.append("'>");
                 n.append(tab);
-                n.append(p.filenameNoPath);
+                n.append(p.getTitle());
                 n.append("</a><br>");
             }
+            n.append("</div>");
         });
+        n.append("</div>");
         return n.toStdString();
+    }),
+            std::pair<string,function<string()>>("{{ __TITLE__ }}",[&](){
+        return this->getTitle().toStdString();
     }),
 };
 private:
     QString filename;
     QString filenameNoPath;
     QDateTime time;
-
+    QString markdown;
+    QString frontmatter;
+    QString title;
+    QString templateName;
     QString content;
     IgnotionDir * dir;
+    unique_ptr<MdParser> mdparser;
     QString renderTemplate(const QString & temp);
-    QString & parseContent();
     QString outputDir; //输出文件路径，用于文件检索，如 HTML/articles/aaa
     QString outputRoutePath; //输出文件陆游路径，如 articles/aaa/hello.html
     QString rootReletiveToOutputDir;
-public:
-    QString markdown;
 public:
     Page(QString filename, IgnotionDir * dir);
     QString translate(bool fource = false);
     bool isTranslated();    //判断Page是否翻译
     bool isUploaded();      //判断Page是否上传
     static void copyStyleCss();
+    const QDateTime &getTime() const;
+    const QString getTimeWithFilename() const;
+    const QString &getTitle() const;
 };
 
 #endif // PAGE_H

@@ -1,15 +1,23 @@
 #include "page.h"
-#include "MdParser.hpp"
-
 
 Page::Page(QString filename, IgnotionDir * dir)
 {
     this->filename = filename;
     this->filenameNoPath = QFileInfo(filename).fileName().chopped(3);
     this->time = FileManager::getFileModifiedTime(filename);
-    this->markdown = FileManager::read(filename); //throw invalid_argument exception
-    this->dir = dir;
+    this->markdown = FileManager::read(filename);
+    this->mdparser.reset(new MdParser(markdown));
 
+    this->frontmatter = this->mdparser->frontMatter();
+    YAML::Node node = YAML::Load(frontmatter.toStdString());
+    if (node["title"]) {
+      this->title = QString(node["title"].as<std::string>().c_str());
+    }
+    if (node["template"]) {
+      this->templateName = QString(node["template"].as<std::string>().c_str());
+    }
+
+    this->dir = dir;
     IgnotionDir * p = this->dir;
     while(! p->isRoot){
         outputDir.prepend("/"+p->routeName);
@@ -18,25 +26,22 @@ Page::Page(QString filename, IgnotionDir * dir)
     }
     outputRoutePath = outputDir + "/"+filenameNoPath + ".html";
     if(outputRoutePath.startsWith("/")) outputRoutePath = outputRoutePath.mid(1);
-
     outputDir.prepend(QString(Config::getInstance().outputDir.c_str()));
+
+
 }
 
 QString Page::translate(bool force){
     if(isTranslated() && !force){
         return "Translation skipped,"+ outputDir+"/"+filenameNoPath+".html is the latest version.";
     }
-    parseContent();
-    QString outputFile = renderTemplate("page.html");
+    content = this->mdparser->parse()->html();
+    if(this->templateName.isEmpty()) this->templateName = "page.html";
+    else if(!this->templateName.endsWith(".html")) this->templateName.append(".html");
+    QString outputFile = renderTemplate(this->templateName);
     FileManager::ensureDir(outputDir);
     FileManager::write(outputDir+"/"+filenameNoPath+".html",outputFile);
     return "Translation succeeded. Generate new file at "+ outputDir+"/"+filenameNoPath+".html";
-}
-
-QString & Page::parseContent(){
-    MdParser mdparser(markdown.toStdString());
-    content = mdparser.html();
-    return content;
 }
 
 void Page::copyStyleCss()
@@ -60,6 +65,21 @@ bool Page::isUploaded(){
     return lastUploadTime > fileModifiedTime;
 }
 
+
+const QDateTime &Page::getTime() const
+{
+    return time;
+}
+
+const QString Page::getTimeWithFilename() const
+{
+    return title.isEmpty()?filenameNoPath:(title+"("+filenameNoPath+")");
+}
+
+const QString &Page::getTitle() const
+{
+    return title.isEmpty()?filenameNoPath:title;
+}
 
 QString Page::renderTemplate(const QString &temp)
 {
