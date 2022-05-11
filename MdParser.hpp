@@ -258,7 +258,6 @@ public:
             j = md.indexOf("**",i);
         }
         MdNode node3(md.mid(i),nul);
-        //node3.html = node3.md;
         node3.parseNode(true);
         node->children.push_back(node3);
     }
@@ -479,16 +478,16 @@ public:
     }
     bool push_line(const QString & line){
         if(line=="" || !capable(line,nul)){
-            qDebug();
+            //qDebug();
             this->ready = true;
             return true;
         }
-        //int thisLevel = ;
         qDebug();
         if(getLiLevel(line) != level){
-            rootlist.children.at(rootlist.children.size()==0?0:rootlist.children.size()-1).appendix.append(line.mid(1)+"\n");
+            rootlist.children.back().appendix.append(line.mid(1)+"\n");
         }else{
-            rootlist.children.push_back(MdNode(trimTabBegin(line).mid(3),li));
+            QString subname = trimTabBegin(line).mid(3);
+            rootlist.children.push_back(MdNode(subname,li));
         }
         this->ready = false;
         return false;
@@ -555,7 +554,7 @@ public:
         //qDebug() << "Link Parser";
     }
     static bool capable(const QString & firstline, TAG_TPYE type){
-        if(type == code || type == blockcode) return false;
+        if(type == root || type == code || type == blockcode) return false;
         int i = firstline.indexOf("[");
         if(i == -1) return false;
         int j = firstline.indexOf("](",i);
@@ -576,7 +575,7 @@ public:
             k = md.indexOf("](",j);
             m = md.indexOf(")",k);
             MdNode node1(md.mid(i,j-i),nul);
-            node1.html = node1.md;
+            node1.parseNode(true);
             node->children.push_back(node1);
             j++;
             MdNode node2(md.mid(j,k-j),href);
@@ -588,7 +587,7 @@ public:
             j = md.indexOf("[",i);
         }
         MdNode node3(md.mid(i),nul);
-        node3.html = node3.md;
+        node3.parseNode(true);
         node->children.push_back(node3);
     }
 };
@@ -635,7 +634,7 @@ public:
     }
     void parse(MdNode * node){
         MdNode temp(md,nul);
-        temp.html = temp.md;
+        temp.html = md;
         node->children.push_back(temp);
     }
 };

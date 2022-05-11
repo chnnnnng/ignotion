@@ -63,11 +63,11 @@ private:
                 return;
             }
             n.append("<div class=\"ignotion_navigation_sub\">");
-            n.append("<h3>");
+            n.append("<span class=\"ignotion_navigation_category_name\">");
             QString tab;
             for(int i=0;i<depth-1;i++) tab.append("&emsp;");
             n.append(tab);
-            n.append(igdir->displayName+"</h3>");
+            n.append(igdir->displayName+"</span>");
             for(int i = 0; i < list.count(); i++)
             {
                 Page p(list.at(i).filePath(),igdir);

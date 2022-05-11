@@ -178,6 +178,7 @@ void MdParser::show(){
 }
 
 QString MdParser::html(){
+    //show();
     //qDebug() << chapter();
     return node->getHTML();
 }
