@@ -74,7 +74,7 @@ private:
                 n.append("<a href='");
                 n.append("./"+this->rootReletiveToOutputDir+p.outputRoutePath);
                 n.append("'>");
-                n.append(tab);
+                //n.append(tab);
                 n.append(p.getTitle());
                 n.append("</a><br>");
             }
@@ -86,6 +86,9 @@ private:
             std::pair<string,function<string()>>("{{ __TITLE__ }}",[&](){
         return this->getTitle().toStdString();
     }),
+            std::pair<string,function<string()>>("{{ __TOC__ }}",[&](){
+        return this->getTOC().toStdString();
+    }),
 };
 private:
     QString filename;
@@ -95,6 +98,7 @@ private:
     QString frontmatter;
     QString title;
     QString templateName;
+    QString TOC;
     QString content;
     IgnotionDir * dir;
     unique_ptr<MdParser> mdparser;
@@ -107,10 +111,11 @@ public:
     QString translate(bool fource = false);
     bool isTranslated();    //判断Page是否翻译
     bool isUploaded();      //判断Page是否上传
-    static void copyStyleCss();
+    static void copyStatic();
     const QDateTime &getTime() const;
     const QString getTimeWithFilename() const;
     const QString &getTitle() const;
+    const QString &getTOC() const;
 };
 
 #endif // PAGE_H

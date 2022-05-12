@@ -17,6 +17,12 @@ Page::Page(QString filename, IgnotionDir * dir)
     if (node["template"]) {
       this->templateName = QString(node["template"].as<std::string>().c_str());
     }
+    if(node["TOC"]){
+        QString TOC_conf = QString(node["TOC"].as<std::string>().c_str()).toUpper();
+        if(TOC_conf.contains("TRUE") || TOC_conf.contains("ENABLE") || TOC_conf.contains("YES")){
+            this->TOC = "[TOC]";
+        }
+    }
 
     this->dir = dir;
     IgnotionDir * p = this->dir;
@@ -37,6 +43,7 @@ QString Page::translate(bool force){
         return "Translation skipped,"+ outputDir+"/"+filenameNoPath+".html is the latest version.";
     }
     content = this->mdparser->parse()->html();
+    if(TOC == "[TOC]") TOC = mdparser->TOC();
     if(this->templateName.isEmpty()) this->templateName = "page.html";
     else if(!this->templateName.endsWith(".html")) this->templateName.append(".html");
     QString outputFile = renderTemplate(this->templateName);
@@ -45,9 +52,15 @@ QString Page::translate(bool force){
     return "Translation succeeded. Generate new file at "+ outputDir+"/"+filenameNoPath+".html";
 }
 
-void Page::copyStyleCss()
+void Page::copyStatic()
 {
-    FileManager::write(QString(Config::getInstance().outputDir.c_str()).append("/style.css"),FileManager::read(QString(Config::getInstance().resourceDir.c_str()) + "/theme/" + QString(Config::getInstance().theme.c_str()) + "/style.css"));
+    QDir themestyledir(QString(Config::getInstance().resourceDir.c_str()) + "/theme/" + QString(Config::getInstance().theme.c_str()) + "/static");
+    if(themestyledir.exists()){
+        QFileInfoList list = themestyledir.entryInfoList();
+        for (int i = 0; i < list.size(); ++i) {
+            QFile::copy(list.at(i).filePath(),QString(Config::getInstance().outputDir.c_str()).append("/"+list.at(i).fileName()));
+        }
+    }
 }
 
 bool Page::isTranslated(){
@@ -80,6 +93,11 @@ const QString Page::getTimeWithFilename() const
 const QString &Page::getTitle() const
 {
     return title.isEmpty()?filenameNoPath:title;
+}
+
+const QString &Page::getTOC() const
+{
+    return TOC;
 }
 
 QString Page::renderTemplate(const QString &temp)

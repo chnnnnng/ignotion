@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
             }
 
         });
-        Page::copyStyleCss();
+        Page::copyStatic();
         cout << endl;
         //return 0;
     }

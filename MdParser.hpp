@@ -69,7 +69,7 @@ public:
     void show();
     QString html();
     QString frontMatter();
-    QString chapter();
+    QString TOC();
 };
 
 class AbsParser{
@@ -98,6 +98,7 @@ public:
     }
     void parse(MdNode* node){
         node->children.push_back(MdNode(md.mid(2),h1));
+        node->children.back().appendix = node->children.back().getPlainText();
     }
 };
 class H2Parser : public AbsParser {
@@ -116,6 +117,7 @@ public:
     }
     void parse(MdNode* node){
         node->children.push_back(MdNode(md.mid(3),h2));
+        node->children.back().appendix = node->children.back().getPlainText();
     }
 };
 class H3Parser : public AbsParser {
@@ -134,6 +136,7 @@ public:
     }
     void parse(MdNode* node){
         node->children.push_back(MdNode(md.mid(4),h3));
+        node->children.back().appendix = node->children.back().getPlainText();
     }
 };
 class H4Parser : public AbsParser {
@@ -152,6 +155,7 @@ public:
     }
     void parse(MdNode* node){
         node->children.push_back(MdNode(md.mid(5),h4));
+        node->children.back().appendix = node->children.back().getPlainText();
     }
 };
 class H5Parser : public AbsParser {
@@ -170,6 +174,7 @@ public:
     }
     void parse(MdNode* node){
         node->children.push_back(MdNode(md.mid(6),h5));
+        node->children.back().appendix = node->children.back().getPlainText();
     }
 };
 class H6Parser : public AbsParser {
@@ -188,6 +193,7 @@ public:
     }
     void parse(MdNode* node){
         node->children.push_back(MdNode(md.mid(7),h6));
+        node->children.back().appendix = node->children.back().getPlainText();
     }
 };
 
@@ -225,6 +231,26 @@ public:
     }
     void parse(MdNode* node){
         node->children.push_back(MdNode("",hr));
+    }
+};
+
+class TOCParser : public AbsParser {
+public:
+    TOCParser(){
+        //qDebug() << "TOC parser";
+    }
+    static bool capable(const QString & firstline, TAG_TPYE type){
+        if(firstline=="[TOC]" && type == root) return true;
+        return false;
+    }
+    bool push_line(const QString &){
+        this->ready = true;
+        return true;
+    }
+    void parse(MdNode* node){
+        MdNode t("",nul);
+        t.html = "{{ __TOC__ }}";
+        node->children.push_back(t);
     }
 };
 

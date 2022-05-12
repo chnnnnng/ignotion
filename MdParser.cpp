@@ -61,6 +61,9 @@ void MdNode::parseNode(bool force){
             else if(H6Parser::capable(line,type)){
                 parser.reset(new H6Parser());
             }
+            else if(TOCParser::capable(line,type)){
+                parser.reset(new TOCParser());
+            }
             else if(StrongParser::capable(line,type)){
                 parser.reset(new StrongParser());
             }
@@ -135,8 +138,8 @@ QString MdNode::getHTML(){
     QString html;
     html += frontTag[type];
     if(type >= h1 && type <= h6){
-        html += " id=\"";
-        html += getPlainText();
+        html += " class=\"ignotion_hx\" id=\"";
+        html += appendix;//getPlainText();
         html += "\">";
     }
     for(auto ch : children){
@@ -187,14 +190,20 @@ QString MdParser::frontMatter(){
     return this->frontmatter;
 }
 
-QString MdParser::chapter(){
+QString MdParser::TOC(){
     if(node->children.empty()) return "";
-    QString chapter;
-    for(auto & ch : node->children){
+    QString TOC;
+    for(auto & ch:node->children){
         if(ch.type >= h1 && ch.type <= h6){
-            chapter.append(ch.getPlainText() + "\n");
+            TOC.append("<a href=\"#" + ch.appendix + "\">");
+            for(int i=0;i<ch.type-h1;i++) TOC.append("&emsp;");
+            TOC.append(ch.appendix+"</a><br>");
         }
     }
-    return chapter;
+    if(!TOC.isEmpty()){
+        TOC.prepend("<div class=\"ignotion-toc\">");
+        TOC.append("</div>");
+    }
+    return TOC;
 }
 
