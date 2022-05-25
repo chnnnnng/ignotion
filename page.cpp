@@ -44,6 +44,7 @@ QString Page::translate(bool force){
     }
     content = this->mdparser->parse()->html();
     if(TOC == "[TOC]") TOC = mdparser->TOC();
+    else TOC = "";
     if(this->templateName.isEmpty()) this->templateName = "page.html";
     else if(!this->templateName.endsWith(".html")) this->templateName.append(".html");
     QString outputFile = renderTemplate(this->templateName);

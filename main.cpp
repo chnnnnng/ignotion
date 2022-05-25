@@ -10,55 +10,58 @@
 #include "config.h"
 #include "page.h"
 #include "directory.h"
-
-//#include "MdParser.hpp"
+#include "watcher.h"
+#include "httpserver.h"
+#include <signal.h>
 
 using namespace std;
 
+unique_ptr<QCoreApplication> a;
+
+void sigint_handler(int signum)
+{
+    if(signum == SIGINT){
+        qDebug() << "\nBye!";
+        a->exit();
+    }
+}
+
+static QSet<QString> HTTP_ALLOWED_FILE_SUFFIX {"js","css","ttf"};
+static QSet<QString> HTTP_ALLOWED_IMAGE_SUFFIX {"jpg","jpeg","png","ico"};
+
 int main(int argc, char *argv[])
 {
-    QCoreApplication a(argc, argv);
+    a.reset(new QCoreApplication(argc, argv));
     QCoreApplication::setApplicationName("Ignotion");
     bool ignotionWorkspace = Config::checkWorkspace();
     bool ignotionDirectory = IgnotionDir::checkDirectory();
     if(!ignotionWorkspace){
         if(ignotionDirectory){
             cout << "# 当前位于Ignotion工作子目录，请在Ignotion工作根目录使用ignotion指令。" << endl;
-            //return 0;
         }
         cout << "# 当前工作目录不是一个Ignotion工作空间" << endl;
         cout << "# 输入指令 --init-ws  将当前目录初始化为Ignotion工作目录" << endl;
         cout << "# 输入指令 --make-dir 将当前目录作为Ignotion工作子目录" << endl;
-        //return 0;
     }
 
 
-//    IgnotionDir rootIgnotionDir(QDir(""));
-//    Page page(QString("test.md"),&rootIgnotionDir);
-//    MdParser mp(page.markdown);
-//    mp.show();
-//    QString outputFile = mp.html();
-//    FileManager::write("test.html",outputFile);
-//    return 0;
-
-
-    QCoreApplication::setApplicationVersion("1.0");
+    QCoreApplication::setApplicationVersion("2.0");
     QCommandLineParser parser;
-    parser.setApplicationDescription("A easy-for-use Markdown Blog");
-    parser.addHelpOption();
+    parser.setApplicationDescription("An Easy-for-use Markdown Blogging Tools");
+    //parser.addHelpOption();
     parser.addVersionOption();
-    parser.addOptions({
-                          {{"l", "list"},"list all pages in workspace."},
-                          {"name-order","list in name order"},
-                          {{"n","new"},"create a new page from template.","template","default.md"},
-                          {"template","specify a template md file.","template","default"},
-                          {{"t", "translate"},"translate a specific page.","page","no-page-given"},
-                          {{"u", "upload"},"upload all pages."},
-                          {"clear","clear all generated HTML files."},
-                          {"init-ws", "initialize current directory as Ignotion workspace"},
-                          {"make-dir","make current directory an Ignotion sub-directory"}
-                      });
-    parser.process(a);
+    parser.addOption({{"l", "list"},"list all pages in workspace."});
+    parser.addOption({"name-order","list in name order"});
+    parser.addOption({{"n","new"},"create a new page from template.","NAME"});
+    parser.addOption({"template","specify a template md file.","TEMPLATE_NAME"});
+    parser.addOption({{"t", "translate"},"translate a specific page.","PAGE"});
+    parser.addOption({{"u", "upload"},"upload all pages."});
+    parser.addOption({"clear","clear all generated HTML files."});
+    parser.addOption({"init-ws", "initialize current directory as Ignotion workspace"});
+    parser.addOption({"make-dir","make current directory an Ignotion sub-directory"});
+    parser.addOption({"server","run a simple HTTP server for Ignotion.","PORT"});
+    parser.addOption({{"h","help"},"Show this."});
+    parser.process(*a.get());
 
     /*  删除所有的生成文件
     *   用法：
@@ -191,11 +194,19 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    /* 初始化Ignotion工作空间
+     * 用法：
+     * ignotion --init-ws
+     */
     if(!ignotionWorkspace && !ignotionDirectory && parser.isSet("init-ws")){
         qDebug() << "init";
         return 0;
     }
 
+    /* 初始化Ignotion子目录
+     * 用法：
+     * ignotion --make-dir
+     */
     if(!ignotionWorkspace && parser.isSet("make-dir")){
         cout << "enter the display name for current directory. (empty for default) : ";
         string displayname;
@@ -224,7 +235,92 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    /* 开启简易WEB服务器
+     * 用法：
+     * ignotion --server <PORT>
+     * 通过Ctrl+c退出，Mac OS使用Command+.
+     * 注意：
+     * 此WEB服务器仅用于测试，正式环境请使用如nginx等更为专业的WEB服务器。
+     */
+    if(parser.isSet("server")){
+//        qDebug() << "watching";
+//        unique_ptr<Watcher> watcher;
+//        watcher.reset(new Watcher());
+//        watcher->start();
+        //HttpServer::instance().run();
+        signal(SIGINT, sigint_handler);
+        NGHttpServer::HttpServer httpserver(2);
+        httpserver.setOnRequestHandler([](NGHttpServer::Session & session){
+            qDebug() << "收到请求，来自" << session.requestSourceIp();
+            qDebug() << "URL:" << session.requestUrl();
+            if(session.requestMethod() == "GET"){
+                QString url = session.requestUrl();
+                if(url == "/"){
+                    session.responseRedirect("/index.html");
+                    return;
+                }else{
+                    QString filepath;
+                    if(url.mid(1).startsWith(Config::getInstance().resourceDir.c_str())){
+                        filepath = url.mid(1);
+                    }else{
+                        filepath = Config::getInstance().outputDir.c_str();
+                        filepath.append(url);
+                    }
+                    filepath = filepath.left(filepath.indexOf("?"));
+                    filepath = filepath.left(filepath.indexOf("#"));
+                    QString suffix = filepath.split(".").back().toLower();
+                    if(suffix == "html"){
+                        session.responseHTML(filepath);
+                        return;
+                    }else if(HTTP_ALLOWED_IMAGE_SUFFIX.contains(suffix)){
+                        session.responseImage(filepath);
+                        return;
+                    }else if(HTTP_ALLOWED_FILE_SUFFIX.contains(suffix)){
+                        session.responseFile(filepath);
+                        return;
+                    }else{
+                        session.responseText("Resource Not Allowed",404);
+                        return;
+                    }
+                }
+            }else{
+                session.responseText("Method Not Allowed",404);
+                return;
+            }
+        });
+        httpserver.listen(QHostAddress::Any, parser.value("server").toInt());
+        qDebug() << "httpserver listening";
+        return a->exec();
+    }
+
+    /* 帮助文档
+     * 用法：
+     * ignotion -h
+     * ignotion --help
+     */
+    if(parser.isSet("help")){
+        cout << parser.applicationDescription().toStdString()<<endl;
+        cout << "List:\n";
+        cout << "\t -l, --list\t\t List all pages in workspace.\n";
+        cout << "\t --name-order\t\t Use with -l to list in name order.\n";
+        cout << "New:\n";
+        cout << "\t -n, --new <NAME>\t Create a new page named <NAME>.\n";
+        cout << "\t --template <TEMPLATE>\t Use with new to specify a <TEMPLATE>.\n";
+        cout << "Translate:\n";
+        cout << "\t -t, --translate <PAGE>\t Translate a specific <PAGE>.\n";
+        cout << "\t\t\t\t Set <PAGE> as 'all' or 'a' to translate all pages.\n";
+        cout << "Upload:\n";
+        cout << "\t -u, --upload \t\t Upload all pages to remote directory.\n";
+        cout << "Others:\n";
+        cout << "\t -h, --help \t\t This doc.\n";
+        cout << "\t --clear \t\t To clear all output files.\n";
+        cout << "\t --init-ws \t\t To initialize this directory as Ignotion workspace.\n";
+        cout << "\t --make-dir \t\t To make this directory an Ignotion sub-directory.\n";
+        cout << "\t --server \t\t To run a simple HTTP server for Ignotion.\n";
+        return 0;
+    }
+
+    cout << "Use -h, --help for help.\n";
 
     return 0;
-    //return a.exec();
 }

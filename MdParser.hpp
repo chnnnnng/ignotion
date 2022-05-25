@@ -30,7 +30,8 @@ enum TAG_TPYE{
     h6              = 17,
     blockcode       = 18,
     code            = 19,
-    root            = 20
+    task            = 20,
+    root            = 21
 };
 
 
@@ -526,6 +527,36 @@ public:
                 li.children.insert(li.children.end(),tempchildren.begin(),tempchildren.end());
             }
         }
+        node->children.push_back(rootlist);
+    }
+};
+
+class TaskListParser : public AbsParser{
+private:
+    MdNode rootlist;
+public:
+    TaskListParser(){
+        //qDebug() << "Ordered list Parser";
+        rootlist.type = ul;
+    }
+    static bool capable(const QString & firstline, TAG_TPYE type){
+        if(type == quote || type == blockcode) return false;
+        if(firstline.startsWith("- [x] ") || firstline.startsWith("- [ ] ")) return true;
+        return false;
+    }
+    bool push_line(const QString & line){
+        if(line=="" || !capable(line,nul)){
+            this->ready = true;
+            return true;
+        }
+        MdNode temp(line.mid(6),task);
+        if(line[3] == 'x') temp.appendix = "class=\"ignotion-task-done\"";
+        else temp.appendix = "class=\"ignotion-task-undone\"";
+        rootlist.children.push_back(temp);
+        this->ready = false;
+        return false;
+    }
+    void parse(MdNode* node){
         node->children.push_back(rootlist);
     }
 };

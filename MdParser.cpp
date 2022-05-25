@@ -6,14 +6,14 @@ const QString frontTag[] = {
     "<hr />","<br />",
     "","<blockquote>",
     "<h1","<h2","<h3","<h4","<h5","<h6", // 右边的尖括号预留给添加其他的标签属性
-    "<pre><code>","<code>",""
+    "<pre><code>","<code>","<li ",""
 };
 // HTML 后置标签
 const QString backTag[] = {
     "","</p>","","</ul>","</ol>","</li>","</em>","</strong>",
     "","","","</blockquote>",
     "</h1>","</h2>","</h3>","</h4>","</h5>","</h6>",
-    "</code></pre>","</code>",""
+    "</code></pre>","</code>","</li>",""
 };
 
 MdNode::MdNode(){
@@ -79,6 +79,9 @@ void MdNode::parseNode(bool force){
             else if(BlockCodeParser::capable(line,type)){
                 parser.reset(new BlockCodeParser());
             }
+            else if(TaskListParser::capable(line,type)){
+                parser.reset(new TaskListParser());
+            }
             else if(UnorderedListParser::capable(line,type)){
                 parser.reset(new UnorderedListParser(line));
             }
@@ -142,6 +145,9 @@ QString MdNode::getHTML(){
         html += appendix;//getPlainText();
         html += "\">";
     }
+    if(type == task){
+        html += appendix + ">";
+    }
     for(auto ch : children){
         html += ch.getHTML();
     }
@@ -193,10 +199,18 @@ QString MdParser::frontMatter(){
 QString MdParser::TOC(){
     if(node->children.empty()) return "";
     QString TOC;
+    TAG_TPYE deepestHx = h1;
+    int deepestDepth = 0;
+    int depthForHx[6]{0};
     for(auto & ch:node->children){
         if(ch.type >= h1 && ch.type <= h6){
             TOC.append("<a href=\"#" + ch.appendix + "\">");
-            for(int i=0;i<ch.type-h1;i++) TOC.append("&emsp;");
+            if(ch.type > deepestHx){
+                deepestDepth++;
+                depthForHx[ch.type-h1] = deepestDepth;
+                deepestHx = ch.type;
+            }
+            for(int i=0;i<depthForHx[ch.type-h1];i++) TOC.append("&emsp;");
             TOC.append(ch.appendix+"</a><br>");
         }
     }

@@ -1,4 +1,6 @@
 QT -= gui
+QT += network
+QT += concurrent
 
 CONFIG += c++11 console
 CONFIG -= app_bundle
@@ -9,11 +11,14 @@ CONFIG -= app_bundle
 
 SOURCES += \
         MdParser.cpp \
+        _httpserver.cpp \
         config.cpp \
         directory.cpp \
         filemanager.cpp \
+        httpserver.cpp \
         main.cpp \
-        page.cpp
+        page.cpp \
+        watcher.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -23,14 +28,15 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 HEADERS += \
     MdParser.hpp \
     __MdParseHTML.hpp \
+    _httpserver.h \
     config.h \
     directory.h \
     filemanager.h \
-    page.h
+    httpserver.h \
+    page.h \
+    watcher.h
 
 DISTFILES += \
-    mytest.md \
-    test.md \
     yaml/yaml.pri
 
 include ($${PWD}/yaml/yaml.pri)
