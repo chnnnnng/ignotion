@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
     parser.addOption({"init-ws", "initialize current directory as Ignotion workspace"});
     parser.addOption({"make-dir","make current directory an Ignotion sub-directory"});
     parser.addOption({"server","run a simple HTTP server for Ignotion.","PORT"});
+    parser.addOption({"autotrans","automatically translate files edited."});
     parser.addOption({{"h","help"},"Show this."});
     parser.process(*a.get());
 
@@ -243,11 +244,6 @@ int main(int argc, char *argv[])
      * 此WEB服务器仅用于测试，正式环境请使用如nginx等更为专业的WEB服务器。
      */
     if(parser.isSet("server")){
-//        qDebug() << "watching";
-//        unique_ptr<Watcher> watcher;
-//        watcher.reset(new Watcher());
-//        watcher->start();
-        //HttpServer::instance().run();
         signal(SIGINT, sigint_handler);
         NGHttpServer::HttpServer httpserver(2);
         httpserver.setOnRequestHandler([](NGHttpServer::Session & session){
@@ -293,6 +289,17 @@ int main(int argc, char *argv[])
         return a->exec();
     }
 
+    /* 自动检测文件变更
+     * 用法：
+     * ignotion --autotrans
+     */
+    if(parser.isSet("autotrans")){
+        unique_ptr<Watcher> watcher;
+        watcher.reset(new Watcher());
+        watcher->start();
+        return a->exec();
+    }
+
     /* 帮助文档
      * 用法：
      * ignotion -h
@@ -317,6 +324,7 @@ int main(int argc, char *argv[])
         cout << "\t --init-ws \t\t To initialize this directory as Ignotion workspace.\n";
         cout << "\t --make-dir \t\t To make this directory an Ignotion sub-directory.\n";
         cout << "\t --server \t\t To run a simple HTTP server for Ignotion.\n";
+        cout << "\t --autotrans \t\t To automatically translate files edited.\n";
         return 0;
     }
 
