@@ -386,7 +386,7 @@ public:
             md.append("<br>");
         }
         this->ready = false;
-        return false;
+        return true;
     }
     void parse(MdNode* node){
         node->children.push_back(MdNode(md,quote));
@@ -411,7 +411,7 @@ public:
             md.append(line + "\n\r");
         }
         this->ready = false;
-        return false;
+        return true;
     }
     void parse(MdNode* node){
         node->children.push_back(MdNode(md,blockcode));
@@ -469,7 +469,7 @@ public:
         }
         //cout<<"over\n";
         this->ready = false;
-        return false;
+        return true;
     }
     void parse(MdNode* node){
         for(auto & li : rootlist.children){
@@ -517,7 +517,7 @@ public:
             rootlist.children.push_back(MdNode(subname,li));
         }
         this->ready = false;
-        return false;
+        return true;
     }
     void parse(MdNode* node){
         for(auto & li : rootlist.children){
@@ -554,7 +554,7 @@ public:
         else temp.appendix = "class=\"ignotion-task-undone\"";
         rootlist.children.push_back(temp);
         this->ready = false;
-        return false;
+        return true;
     }
     void parse(MdNode* node){
         node->children.push_back(rootlist);
@@ -661,7 +661,7 @@ public:
     bool push_line(const QString & line){
         if(line == "" || UnorderedListParser::capable(line,nul) || OrderedListParser::capable(line,nul) || BlockCodeParser::capable(line,nul) || QuoteParser::capable(line,nul) || LineParser::capable(line,nul)){
             this->ready = true;
-            return true;
+            return false; //这边返回false，即让此行不要向下移动，以免影响下一次解析
         }
         md.append(line+"\n");
         if(line.size() > 2 && line.right(2) == "  "){
@@ -669,7 +669,7 @@ public:
             md.append("<br>");
         }
         this->ready = false;
-        return false;
+        return true;
     }
     void parse(MdNode* node){
         node->children.push_back(MdNode(md,paragraph));

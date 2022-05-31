@@ -328,7 +328,7 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    cout << "Use -h, --help for help.\n";
+    //cout << "Use -h, --help for help.\n";
 
     return 0;
 }

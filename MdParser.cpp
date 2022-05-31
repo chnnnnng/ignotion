@@ -37,7 +37,9 @@ void MdNode::parseNode(bool force){
     children.clear();
     QStringList list = this->md.split("\n");
     if(!list.back().isEmpty())list.append("");
-    for(auto & line : list){
+    size_t len = list.size();
+    for(size_t i = 0; i< len; i++){
+        auto & line = list[i];
         if(parser == nullptr){
             if(line == "") continue;
             else if(LineParser::capable(line,type)){
@@ -102,7 +104,9 @@ void MdNode::parseNode(bool force){
             }
         }
         if(parser != nullptr && parser->ready == false){
-            parser->push_line(line);
+            if( !parser->push_line(line) ) {i--;};
+            //push_line返回 true，表明此行被成功push，i++
+            //push_line返回false，表明此行不应该push，因此不执行i++
         }
         if(parser->ready){
             parser->parse(this);
